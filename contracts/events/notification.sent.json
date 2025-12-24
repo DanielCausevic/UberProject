@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "notification.sent",
+  "type": "object",
+  "required": ["trip_id", "channel", "message"],
+  "properties": {
+    "trip_id": {"type": "string"},
+    "channel": {"type": "string"},
+    "message": {"type": "string"}
+  }
+}

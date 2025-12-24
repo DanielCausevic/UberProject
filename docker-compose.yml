@@ -1,0 +1,94 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672", "15672:15672"]
+    environment:
+      RABBITMQ_DEFAULT_USER: app
+      RABBITMQ_DEFAULT_PASS: app
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # --- API Gateway / BFF ---
+  gateway:
+    build:
+      context: ./services/gateway
+    environment:
+      PORT: "3000"
+      SERVICE_NAME: "gateway"
+      PYTHONPATH: "/app"
+      # downstream service URLs (docker-internal)
+      RIDER_URL: "http://rider:3001"
+      DRIVER_URL: "http://driver:3002"
+      TRIP_URL: "http://trip:3003"
+    ports: ["3000:3000"]
+    depends_on:
+      rider: { condition: service_started }
+      driver: { condition: service_started }
+      trip: { condition: service_started }
+
+  # --- Core services ---
+  rider:
+    build: { context: ./services/rider_service }
+    environment:
+      PORT: "3001"
+      SERVICE_NAME: "rider-service"
+      PYTHONPATH: "/app"
+    ports: ["3001:3001"]
+
+  driver:
+    build: { context: ./services/driver_service }
+    environment:
+      PORT: "3002"
+      SERVICE_NAME: "driver-service"
+      RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      PYTHONPATH: "/app"
+    ports: ["3002:3002"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  trip:
+    build: { context: ./services/trip_service }
+    environment:
+      PORT: "3003"
+      SERVICE_NAME: "trip-service"
+      RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      PYTHONPATH: "/app"
+    ports: ["3003:3003"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  pricing:
+    build: { context: ./services/pricing_service }
+    environment:
+      PORT: "3004"
+      SERVICE_NAME: "pricing-service"
+      RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      PYTHONPATH: "/app"
+    ports: ["3004:3004"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  payment:
+    build: { context: ./services/payment_service }
+    environment:
+      PORT: "3005"
+      SERVICE_NAME: "payment-service"
+      RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      PYTHONPATH: "/app"
+    ports: ["3005:3005"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  notification:
+    build: { context: ./services/notification_service }
+    environment:
+      PORT: "3006"
+      SERVICE_NAME: "notification-service"
+      RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      PYTHONPATH: "/app"
+    ports: ["3006:3006"]
+    depends_on:
+      rabbitmq: { condition: service_healthy }

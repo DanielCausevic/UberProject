@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "payment.charged",
+  "type": "object",
+  "required": ["trip_id", "amount_dkk", "payment_id"],
+  "properties": {
+    "trip_id": {"type": "string"},
+    "amount_dkk": {"type": "number"},
+    "payment_id": {"type": "string"}
+  }
+}

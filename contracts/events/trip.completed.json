@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "trip.completed",
+  "type": "object",
+  "required": ["trip_id", "final_price_dkk"],
+  "properties": {
+    "trip_id": {"type": "string"},
+    "final_price_dkk": {"type": "number"}
+  }
+}

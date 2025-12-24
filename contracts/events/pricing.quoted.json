@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "pricing.quoted",
+  "type": "object",
+  "required": ["trip_id", "estimated_price_dkk"],
+  "properties": {
+    "trip_id": {"type": "string"},
+    "estimated_price_dkk": {"type": "number"}
+  }
+}

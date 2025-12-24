@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "trip.requested",
+  "type": "object",
+  "required": ["trip_id", "rider_id", "pickup", "dropoff"],
+  "properties": {
+    "trip_id": {"type": "string"},
+    "rider_id": {"type": "string"},
+    "pickup": {
+      "type": "object",
+      "required": ["lat", "lng"],
+      "properties": {"lat": {"type": "number"}, "lng": {"type": "number"}}
+    },
+    "dropoff": {
+      "type": "object",
+      "required": ["lat", "lng"],
+      "properties": {"lat": {"type": "number"}, "lng": {"type": "number"}}
+    }
+  }
+}

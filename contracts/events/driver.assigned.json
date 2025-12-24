@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "driver.assigned",
+  "type": "object",
+  "required": ["trip_id", "driver_id"],
+  "properties": {
+    "trip_id": {"type": "string"},
+    "driver_id": {"type": "string"}
+  }
+}
