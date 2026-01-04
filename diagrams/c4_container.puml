@@ -1,0 +1,44 @@
+@startuml C4 Container Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(rider, "Rider", "A user requesting rides")
+Person(driver, "Driver", "A driver providing rides")
+
+System_Boundary(uber_system, "Uber-like System") {
+    Container(gateway, "API Gateway", "FastAPI", "Routes requests to services")
+    Container(driver_service, "Driver Service", "FastAPI + PostgreSQL", "Manages drivers")
+    Container(rider_service, "Rider Service", "FastAPI + MongoDB", "Manages riders")
+    Container(trip_service, "Trip Service", "FastAPI + PostgreSQL", "Manages trips")
+    Container(pricing_service, "Pricing Service", "FastAPI + Redis", "Calculates pricing")
+    Container(payment_service, "Payment Service", "FastAPI", "Handles payments")
+    Container(notification_service, "Notification Service", "FastAPI + MongoDB", "Sends notifications")
+
+    ContainerDb(postgres, "PostgreSQL", "PostgreSQL", "Stores relational data for drivers and trips")
+    ContainerDb(mongo, "MongoDB", "MongoDB", "Stores document data for riders and notifications")
+    ContainerDb(redis, "Redis", "Redis", "Caches pricing rules")
+    ContainerQueue(rabbitmq, "RabbitMQ", "RabbitMQ", "Event bus for inter-service communication")
+}
+
+Rel(rider, gateway, "Requests rides")
+Rel(driver, gateway, "Updates availability")
+
+Rel(gateway, driver_service, "Manages drivers")
+Rel(gateway, rider_service, "Manages riders")
+Rel(gateway, trip_service, "Manages trips")
+Rel(gateway, pricing_service, "Gets pricing")
+Rel(gateway, payment_service, "Processes payments")
+Rel(gateway, notification_service, "Sends notifications")
+
+Rel(driver_service, postgres, "Reads/Writes")
+Rel(rider_service, mongo, "Reads/Writes")
+Rel(trip_service, postgres, "Reads/Writes")
+Rel(pricing_service, redis, "Reads/Writes")
+Rel(notification_service, mongo, "Reads/Writes")
+
+Rel(trip_service, rabbitmq, "Publishes events")
+Rel(pricing_service, rabbitmq, "Subscribes to events")
+Rel(driver_service, rabbitmq, "Subscribes to events")
+Rel(payment_service, rabbitmq, "Subscribes to events")
+Rel(notification_service, rabbitmq, "Subscribes to events")
+
+@enduml

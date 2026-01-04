@@ -16,7 +16,8 @@ independent deploys, bounded contexts, and event-driven communication.
   - Payment Service
   - Notification Service
 - Health endpoints, logging baseline, and a standard project layout
-- GitHub Actions CI (lint + tests)
+- GitHub Actions CI (lint + tests + docker build)
+- Diagrams: C4 Container diagram and Trip Lifecycle sequence diagram
 - Pre-commit config (format/lint)
 
 **What is implemented vs stubbed**
@@ -33,6 +34,15 @@ docker compose up --build
 - Trip docs: http://localhost:3003/docs
 - Driver docs: http://localhost:3002/docs
 - RabbitMQ UI: http://localhost:15672 (app/app)
+
+## Diagrams
+- [C4 Container Diagram](diagrams/c4_container.puml) - Overview of services, databases, and message queue
+- [Trip Lifecycle Sequence Diagram](diagrams/trip_lifecycle.puml) - Event flow for a trip
+
+## CI/CD
+- GitHub Actions workflow for linting, testing, and building Docker images
+- Pushes images to GitHub Container Registry on main branch
+- Placeholder for deployment to VM
 
 ## Suggested learning path (what we’ll implement next)
 1) Add Pricing service: `trip.requested` -> `pricing.quoted`

@@ -3,8 +3,16 @@ line-length = 100
 target-version = "py312"
 
 [tool.pytest.ini_options]
-addopts = "-q"
+addopts = "-q --tb=short --strict-markers"
 testpaths = ["tests"]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "unit: marks tests as unit tests",
+    "mongodb: marks tests as requiring MongoDB",
+    "redis: marks tests as requiring Redis",
+    "postgresql: marks tests as requiring PostgreSQL",
+    "asyncio: marks tests as async tests"
+]
 
 [tool.black]
 line-length = 100

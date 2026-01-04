@@ -1,0 +1,39 @@
+@startuml Trip Lifecycle Sequence Diagram
+actor Rider
+participant Gateway
+participant TripService
+participant RabbitMQ
+participant PricingService
+participant DriverService
+participant PaymentService
+participant NotificationService
+
+Rider -> Gateway: Request trip
+Gateway -> TripService: Create trip
+TripService -> TripService: Save trip
+TripService -> RabbitMQ: Publish trip.requested
+RabbitMQ -> PricingService: trip.requested
+PricingService -> PricingService: Calculate price
+PricingService -> RabbitMQ: Publish pricing.quoted
+RabbitMQ -> TripService: pricing.quoted
+TripService -> TripService: Update trip with price
+RabbitMQ -> DriverService: pricing.quoted
+DriverService -> DriverService: Assign driver
+DriverService -> RabbitMQ: Publish driver.assigned
+RabbitMQ -> TripService: driver.assigned
+TripService -> TripService: Update trip with driver
+Rider -> Gateway: Confirm trip (assume)
+Gateway -> TripService: Start trip
+TripService -> TripService: Mark in progress
+... Trip in progress ...
+Rider -> Gateway: Complete trip
+Gateway -> TripService: Complete trip
+TripService -> TripService: Mark completed
+TripService -> RabbitMQ: Publish trip.completed
+RabbitMQ -> PaymentService: trip.completed
+PaymentService -> PaymentService: Charge payment
+PaymentService -> RabbitMQ: Publish payment.charged
+RabbitMQ -> NotificationService: payment.charged
+NotificationService -> NotificationService: Send receipt
+NotificationService -> RabbitMQ: Publish notification.sent
+@enduml

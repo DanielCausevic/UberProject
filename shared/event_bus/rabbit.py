@@ -3,7 +3,7 @@ import json
 from typing import Awaitable, Callable, Optional
 
 import aio_pika
-from aio_pika.abc import AbstractIncomingMessage
+from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection, AbstractChannel, AbstractExchange
 
 from .types import BaseEvent
 
@@ -13,16 +13,24 @@ class RabbitBus:
     def __init__(self, url: str, exchange_name: str = "events") -> None:
         self.url = url
         self.exchange_name = exchange_name
-        self._conn: Optional[aio_pika.RobustConnection] = None
-        self._channel: Optional[aio_pika.RobustChannel] = None
-        self._exchange: Optional[aio_pika.Exchange] = None
+        self._conn: Optional[AbstractRobustConnection] = None
+        self._channel: Optional[AbstractChannel] = None
+        self._exchange: Optional[AbstractExchange] = None
 
     async def connect(self) -> None:
-        self._conn = await aio_pika.connect_robust(self.url)
-        self._channel = await self._conn.channel()
-        self._exchange = await self._channel.declare_exchange(
-            self.exchange_name, aio_pika.ExchangeType.TOPIC, durable=True
-        )
+        import asyncio
+        for attempt in range(10):
+            try:
+                self._conn = await aio_pika.connect_robust(self.url)
+                self._channel = await self._conn.channel()
+                self._exchange = await self._channel.declare_exchange(
+                    self.exchange_name, aio_pika.ExchangeType.TOPIC, durable=True
+                )
+                return
+            except Exception:
+                if attempt == 9:
+                    raise
+                await asyncio.sleep(1)
 
     async def close(self) -> None:
         if self._channel:

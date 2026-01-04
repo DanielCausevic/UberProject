@@ -11,13 +11,55 @@ services:
       timeout: 5s
       retries: 12
 
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: uber
+    ports: ["5433:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d uber"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  mongodb:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: app
+      MONGO_INITDB_ROOT_PASSWORD: app
+      MONGO_INITDB_DATABASE: uber
+    ports: ["27017:27017"]
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   # --- API Gateway / BFF ---
   gateway:
     build:
-      context: ./services/gateway
+      context: .
+      dockerfile: services/gateway/Dockerfile
     environment:
       PORT: "3000"
-      SERVICE_NAME: "gateway"
+      SERVICE_NAME: "gateway-service"
       PYTHONPATH: "/app"
       # downstream service URLs (docker-internal)
       RIDER_URL: "http://rider:3001"
@@ -31,64 +73,98 @@ services:
 
   # --- Core services ---
   rider:
-    build: { context: ./services/rider_service }
+    build: 
+      context: .
+      dockerfile: services/rider_service/Dockerfile
     environment:
       PORT: "3001"
       SERVICE_NAME: "rider-service"
+      MONGODB_URL: "mongodb://app:app@mongodb:27017/uber"
       PYTHONPATH: "/app"
     ports: ["3001:3001"]
+    depends_on:
+      mongodb: { condition: service_healthy }
 
   driver:
-    build: { context: ./services/driver_service }
+    build: 
+      context: .
+      dockerfile: services/driver_service/Dockerfile
     environment:
       PORT: "3002"
       SERVICE_NAME: "driver-service"
       RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      DATABASE_URL: "postgresql://app:app@postgres:5432/uber"
       PYTHONPATH: "/app"
     ports: ["3002:3002"]
     depends_on:
       rabbitmq: { condition: service_healthy }
+      postgres: { condition: service_healthy }
 
   trip:
-    build: { context: ./services/trip_service }
+    build:
+      context: .
+      dockerfile: services/trip_service/Dockerfile
     environment:
       PORT: "3003"
       SERVICE_NAME: "trip-service"
       RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      DATABASE_URL: "postgresql://app:app@postgres:5432/uber"
       PYTHONPATH: "/app"
-    ports: ["3003:3003"]
+    ports:
+      - "3003:3003"
     depends_on:
-      rabbitmq: { condition: service_healthy }
+      rabbitmq:
+        condition: service_healthy
+      postgres: { condition: service_healthy }
 
   pricing:
-    build: { context: ./services/pricing_service }
+    build: 
+      context: .
+      dockerfile: services/pricing_service/Dockerfile
     environment:
       PORT: "3004"
       SERVICE_NAME: "pricing-service"
       RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      DATABASE_URL: "postgresql://app:app@postgres:5432/uber"
+      REDIS_URL: "redis://redis:6379"
       PYTHONPATH: "/app"
     ports: ["3004:3004"]
     depends_on:
       rabbitmq: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
 
   payment:
-    build: { context: ./services/payment_service }
+    build: 
+      context: .
+      dockerfile: services/payment_service/Dockerfile
     environment:
       PORT: "3005"
       SERVICE_NAME: "payment-service"
       RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      DATABASE_URL: "postgresql://app:app@postgres:5432/uber"
       PYTHONPATH: "/app"
     ports: ["3005:3005"]
     depends_on:
       rabbitmq: { condition: service_healthy }
+      postgres: { condition: service_healthy }
 
   notification:
-    build: { context: ./services/notification_service }
+    build: 
+      context: .
+      dockerfile: services/notification_service/Dockerfile
     environment:
       PORT: "3006"
       SERVICE_NAME: "notification-service"
       RABBITMQ_URL: "amqp://app:app@rabbitmq:5672/"
+      MONGODB_URL: "mongodb://app:app@mongodb:27017/uber"
       PYTHONPATH: "/app"
     ports: ["3006:3006"]
     depends_on:
       rabbitmq: { condition: service_healthy }
+      mongodb: { condition: service_healthy }
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
