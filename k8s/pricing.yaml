@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pricing
+  template:
+    metadata:
+      labels:
+        app: pricing
+    spec:
+      containers:
+      - name: pricing
+        image: uberproject-pricing:latest
+        env:
+        - name: PORT
+          value: "3004"
+        - name: SERVICE_NAME
+          value: "pricing-service"
+        - name: MONGODB_URL
+          value: "mongodb://app:app@mongodb:27017/uber"
+        - name: PYTHONPATH
+          value: "/app"
+        ports:
+        - containerPort: 3004
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pricing
+spec:
+  selector:
+    app: pricing
+  ports:
+  - port: 3004
+    targetPort: 3004
